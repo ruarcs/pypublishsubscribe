@@ -9,8 +9,7 @@ class Publisher(resource.Resource):
     # and list of tuples (the messages).
     # Each tuple takes the form: 
     # (message, [subscriber_name_1, subscriber_name_2, ...])
-    # When a new message is published copy (b = a[:] or b = list(a))
-    # the *current* list
+    # When a new message is published copy the *current* list
     # of subscribers into a new tuple, so that we have an *independent*
     # of subscribers.
     topics = {}
@@ -67,7 +66,16 @@ class Publisher(resource.Resource):
         return status_message           
             
     def render_DELETE(self, request):
-        pass
+        if len(request.postpath) != 2:
+            raise ValueError( "Invalid resource!" )
+        topic = request.postpath[0]
+        username = request.postpath[1]
+        if not topic in self.topics or not username in self.topics[topic][0]:
+            request.setResponseCode(404)
+            return ""
+        self.topics[topic][0].remove(username)
+        request.setResponseCode(200)
+        return "Successfully unsubscribed."
         
 site = server.Site(Publisher())
 port = 8081
