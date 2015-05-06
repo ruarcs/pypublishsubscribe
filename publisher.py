@@ -24,16 +24,17 @@ class Publisher(resource.Resource):
         if not topic in self.topics:
             request.setResponseCode(404)
             return ""
-        messages = self.topics[topic][1][:]
-        # Iterate over copy to allow removal(?!)
-        for message in messages:
+        messages = self.topics[topic][1]
+        for index, message in enumerate(list(messages)):
+            # Enumerate over copy to allow removal.
             if username in message[1]:
                 the_message = message[0]
-                message[1].remove(username)
-                if not message[1]:
+                # Remove from *original* using index.
+                messages[index][1].remove(username)
+                if not messages[index][1]:
                     # If all users have received then
                     # delete the message, *from original list*.
-                    self.topics[topic][1].remove(message)
+                    del messages[index]
                 request.setResponseCode(200)
                 return the_message
         request.setResponseCode(204)
