@@ -1,6 +1,7 @@
-from twisted.internet import reactor, protocol
+from twisted.web import server, resource
+from twisted.internet import reactor
 
-class Publisher(protocol.Protocol):
+class Publisher(resource.Resource):
     # This structure consists of
     # a dict of tuples. The key is the topic
     # name. The value is a tuple of a list
@@ -14,6 +15,25 @@ class Publisher(protocol.Protocol):
     # of subscribers.
     # When 
     topics = {}
-    
-    def dataReceived(self, data)
+    isLeaf = True
+    def render_GET(self, request):
+        # placeholder print
+        print "got a GET......"
+        return "{0}".format(request.args.keys())
+    def render_POST(self, request):
+        # Child should be a topic name, in which case
+        # we create a new entry.
+        print "got a POST......"
+        message = request.content.read()
+        return "the message body was \"%s\"" % message
+    def render_DELETE(self, request):
+        pass
+        
+site = server.Site(Publisher())
+port = 8081
+reactor.listenTCP(8081, site)
+print "starting....."
+print "listening on %d" % port
+reactor.run()
+        
         
