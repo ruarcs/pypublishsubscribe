@@ -24,11 +24,18 @@ class Publisher(resource.Resource):
         if not topic in self.topics:
             request.setResponseCode(404)
             return ""
-        messages = self.topics[topic][1]
+        messages = self.topics[topic][1][:]
+        # Iterate over copy to allow removal(?!)
         for message in messages:
             if username in message[1]:
+                the_message = message[0]
+                message[1].remove(username)
+                if not message[1]:
+                    # If all users have received then
+                    # delete the message, *from original list*.
+                    self.topics[topic][1].remove(message)
                 request.setResponseCode(200)
-                return message[0]
+                return the_message
         request.setResponseCode(204)
         return ""
         
@@ -56,8 +63,7 @@ class Publisher(resource.Resource):
             response_code, status_message \
             = new_message(request.postpath[0], request.content.read())
         request.setResponseCode(response_code)
-        return status_message
-            
+        return status_message           
             
     def render_DELETE(self, request):
         pass
