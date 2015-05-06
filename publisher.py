@@ -18,12 +18,16 @@ class Publisher(resource.Resource):
     isLeaf = True
     def render_GET(self, request):
         # placeholder print
-        print "got a GET......"
+        print "got a GET......" 
         return "{0}".format(request.args.keys())
     def render_POST(self, request):
         # Child should be a topic name, in which case
         # we create a new entry.
         print "got a POST......"
+        if len(request.postpath) != 1:
+            raise ValueError( "Invalid num args!" )
+        topic = request.postpath[0]
+        print "topic is \"%s\"" % topic
         message = request.content.read()
         return "the message body was \"%s\"" % message
     def render_DELETE(self, request):
