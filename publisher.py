@@ -13,23 +13,53 @@ class Publisher(resource.Resource):
     # the *current* list
     # of subscribers into a new tuple, so that we have an *independent*
     # of subscribers.
-    # When 
     topics = {}
     isLeaf = True
+    
     def render_GET(self, request):
-        # placeholder print
-        print "got a GET......" 
-        return "{0}".format(request.args.keys())
-    def render_POST(self, request):
-        # Child should be a topic name, in which case
-        # we create a new entry.
-        print "got a POST......"
-        if len(request.postpath) != 1:
-            raise ValueError( "Invalid num args!" )
+        if len(request.postpath) != 2:
+            raise ValueError( "Invalid resource!" )
         topic = request.postpath[0]
-        print "topic is \"%s\"" % topic
-        message = request.content.read()
-        return "the message body was \"%s\"" % message
+        username = request.postpath[1]
+        if not topic in topics:
+            #return 404???
+            request.setResponseCode(404)
+            return ""
+        messages = topics[topic][1]
+        for message in messages:
+            if username in message[1]:
+                request.setResponseCode(200)
+                return message[0]
+        request.setResponseCode(204)
+        return ""
+        
+    def render_POST(self, request):
+        def new_message(topic, message):
+            if topic in self.topics:
+                # If topic has been subscribed to then add a new entry,
+                # copying the list of current subscribers.
+                topic_entry = self.topics[topic]
+                topics_entry[1].append((message, topic_entry[0][:]))
+            return 200, "Message successfully posted."
+        def new_subscription(topic, username):
+            if topic in self.topics:
+                self.topics[topic][0].append(username)
+            else:
+                self.topics[topic] = ([username],[])
+            return 200, "Subscription successful."
+        postpath_length = len(request.postpath)
+        if postpath_length == 0 or postpath_length > 2:
+            raise ValueError( "Invalid resource!" )
+        elif postpath_length == 2:
+            response_code, status_message \
+            = new_subscription(request.postpath[0], request.postpath[1])
+        else:
+            response_code, status_message \
+            = new_message(request.postpath[0], request.content.read())
+        request.setResponseCode(response_code)
+        return status_message
+            
+            
     def render_DELETE(self, request):
         pass
         
