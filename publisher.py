@@ -21,11 +21,10 @@ class Publisher(resource.Resource):
             raise ValueError( "Invalid resource!" )
         topic = request.postpath[0]
         username = request.postpath[1]
-        if not topic in topics:
-            #return 404???
+        if not topic in self.topics:
             request.setResponseCode(404)
             return ""
-        messages = topics[topic][1]
+        messages = self.topics[topic][1]
         for message in messages:
             if username in message[1]:
                 request.setResponseCode(200)
@@ -39,7 +38,7 @@ class Publisher(resource.Resource):
                 # If topic has been subscribed to then add a new entry,
                 # copying the list of current subscribers.
                 topic_entry = self.topics[topic]
-                topics_entry[1].append((message, topic_entry[0][:]))
+                topic_entry[1].append((message, topic_entry[0][:]))
             return 200, "Message successfully posted."
         def new_subscription(topic, username):
             if topic in self.topics:
