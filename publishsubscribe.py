@@ -1,3 +1,4 @@
+import sys
 from twisted.web import server, resource
 from twisted.internet import reactor
 
@@ -25,7 +26,7 @@ class PublishSubscribeResource(resource.Resource):
             return ""
         messages = self.topics[topic][1]
         for index, message in enumerate(list(messages)):
-            # Enumerate over copy to allow removal.
+            # Enumerate over *copy* to allow removal.
             if username in message[1]:
                 the_message = message[0]
                 # Remove from *original* using index.
@@ -78,13 +79,18 @@ class PublishSubscribeResource(resource.Resource):
         return "Successfully unsubscribed."
         
     def _clear(self):
-        # Allow to fully clear the data structures.
-        topics = {}
+        # Allow to fully clear the data structure.
+        self.topics.clear()
        
-def main(): 
+def main():
+    if len(sys.argv) != 2:
+        raise ValueError("Please provide a port number to listen on.")
     site = server.Site(PublishSubscribeResource())
-    port = 8081
-    reactor.listenTCP(8081, site)
+    try:
+        port = int( sys.argv[1])
+    except:
+        raise ValueError( "The port number must be a valid integer." )
+    reactor.listenTCP(port, site)
     print "Starting server. Listening on %d." % port
     reactor.run()
     
