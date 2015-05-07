@@ -75,6 +75,16 @@ class PublishSubscribeResource(resource.Resource):
             request.setResponseCode(404)
             return ""
         self.topics[topic][0].remove(username)
+        if not self.topics[topic][0]:
+            # If there are no more subscribers to this topic
+            # then remove it.
+            self.topics.remove(topic)
+        else:
+            # There are still subscribers. However we must
+            # remove this user from any messages they are currently
+            # subscribed to, otherwise this message will never
+            # be deleted, and effectively leaks memory.
+            pass
         request.setResponseCode(200)
         return "Successfully unsubscribed."
         
@@ -83,6 +93,8 @@ class PublishSubscribeResource(resource.Resource):
         self.topics.clear()
        
 def main():
+    # Simple main method to allow the server to run, binding
+    # to the specified port.
     if len(sys.argv) != 2:
         raise ValueError("Please provide a port number to listen on.")
     site = server.Site(PublishSubscribeResource())
