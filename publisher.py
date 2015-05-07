@@ -77,11 +77,18 @@ class Publisher(resource.Resource):
         request.setResponseCode(200)
         return "Successfully unsubscribed."
         
-site = server.Site(Publisher())
-port = 8081
-reactor.listenTCP(8081, site)
-print "starting....."
-print "listening on %d" % port
-reactor.run()
+    def _clear(self):
+        # Allow to fully clear the data structures.
+        topics = {}
+       
+def main(): 
+    site = server.Site(Publisher())
+    port = 8081
+    reactor.listenTCP(8081, site)
+    print "Starting server. Listening on %d." % port
+    reactor.run()
+    
+if __name__ == '__main__':
+    main()
         
         
