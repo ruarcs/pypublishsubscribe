@@ -1,7 +1,7 @@
 from twisted.web import server, resource
 from twisted.internet import reactor
 
-class Publisher(resource.Resource):
+class PublishSubscribeResource(resource.Resource):
     # This structure consists of
     # a dict of tuples. The key is the topic
     # name. The value is a tuple of a list
@@ -82,7 +82,7 @@ class Publisher(resource.Resource):
         topics = {}
        
 def main(): 
-    site = server.Site(Publisher())
+    site = server.Site(PublishSubscribeResource())
     port = 8081
     reactor.listenTCP(8081, site)
     print "Starting server. Listening on %d." % port

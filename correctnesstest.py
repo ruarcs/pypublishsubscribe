@@ -1,39 +1,37 @@
-from twisted.trial import unittest
-import requests
-from publisher import Publisher
-from twisted.web import server
-from twisted.internet import reactor
-from threading import Thread
+from twisted.trial.unittest import TestCase
+from twisted.internet.defer import Deferred
+from twisted.internet.protocol import ClientFactory, ServerFactory, Protocol
+
+def get_factory_deferred(host, port):
+    from twisted.internet import reactor
+    factory = PublishSubscribeServerFactory()
+    reactor.connectTCP(host, port, factory)
+    return factory.deferred
+    
+class PublishSubscribeServerFactory(Factory):
+
+    def __init__()
+    return PublishSubscribeServer()
 
 class CorrectnessTest(unittest.TestCase):
 
-    port = 8081
-    publisher = Publisher()
-    
-    @classmethod
-    def setUpClass(cls):
-        print "I'm being called....."
-        #Start the server
-        site = server.Site(cls.publisher)
-        #reactor.listenTCP(cls.port, site)
-        reactor.listenTCP(8081, site)
-        Thread(target=reactor.run, args=(False,)).start()
-        print "listening on 8081......"
-    
-    @classmethod  
-    def tearDownClass(cls):
-        # Stop the server
-        print "I'm here!!"
-        reactor.callFromThread(reactor.stop)
+    def setUp(self):
+        factory = PublishSubscribeServerFactory()
+        from twisted.internet import reactor
+        self.port = reactor.listenTCP(0, factory, interface="127.0.0.1")
+        self.port_number = self.port.getHost().port
         
     def tearDown(self):
-        # After each individual test clear the server's data
-        # structures to give test independence.
-        CorrectnessTest.publisher._clear()
-        
+        port, self.port = self.port, None
+        return port.stopListening()
+            
     def testSubscribe(self):
-        response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
-        self.assertEqual(response.status_code, 200)
+        #the_deferred = get_factory_deferred("127.0.0.1", self.port_number)
+        #def assertResponse(response_code):
+        #    self.assertEquals(
+        #response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
+        #self.assertEqual(response.status_code, 200)
+        self.assertEqual(200, 200)
         
     #def testPostMessage(self):
     #   response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
