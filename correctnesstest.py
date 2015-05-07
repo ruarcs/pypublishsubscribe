@@ -6,7 +6,9 @@ from twisted.internet import reactor
 from threading import Thread
 
 class CorrectnessTest(unittest.TestCase):
-
+    """A set of tests to ensure that the Publish-Subscribe
+        server obeys the contract provided in the exercise
+        """
     port = 8081
     publisher = PublishSubscribeResource()
     
@@ -105,16 +107,20 @@ class CorrectnessTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         # Post a new update to "weather". This is what Alice should receive if she
         # queries the weather.
-        new_weather = '...now it\'s sunny...oh no, wait, cloudy again!'
-        response = requests.post("http://localhost:%d/weather" % self.port, data=new_weather)
+        message = '...now it\'s sunny...oh no, wait, cloudy again!'
+        response = requests.post("http://localhost:%d/weather" % self.port, data=message)
         self.assertEqual(response.status_code, 200)
         # An attempt by Alice to get a weather update should be a 204, as
         # while she is subscribed, no message has been posted since.
         response = requests.get("http://localhost:%d/weather/alice" % self.port)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.text, new_weather)
+        self.assertEqual(response.text, message)
         
-    
+    def testOldestPostedMessageShouldBeReceived(self):
+        """What is the contract here? If Bob is subscribed to weather
+            updates, and message A and B are posted, then Bob requests
+            an update, should A be delivered first?"""
+        pass
     
     ############################################################################
     # Helper functions

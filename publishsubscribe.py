@@ -84,7 +84,16 @@ class PublishSubscribeResource(resource.Resource):
             # remove this user from any messages they are currently
             # subscribed to, otherwise this message will never
             # be deleted, and effectively leaks memory.
-            pass
+            messages = self.topics[topic][1]
+            for index, message in enumerate(list(messages)):
+            # Enumerate over *copy* to allow removal.
+                if username in message[1]:
+                    # Remove from *original* using index.
+                    messages[index][1].remove(username)
+                    if not messages[index][1]:
+                        # If all users have received then
+                        # delete the message, *from original list*.
+                        del messages[index]
         request.setResponseCode(200)
         return "Successfully unsubscribed."
         
