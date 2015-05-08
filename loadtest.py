@@ -8,20 +8,6 @@ class LoadTest(BasePublishSubscribeTest):
     """A set of tests to ensure that the Publish-Subscribe
         server copes under simulated load.
         """  
-    def testSimpleLoadTestNoSubscription(self):
-        def sendRequestExpect404():
-            response = requests.get("http://localhost:%d/weather/alice" % self.port)
-            self.assertEqual(response.status_code, 404)
-        concurrent = 100
-        q = Queue(concurrent * 2)
-        threads = []
-        for i in range(concurrent):
-            t = Thread(target=sendRequestExpect404)
-            t.daemon = True
-            t.start()
-            threads.append(t)
-        for thread in threads:
-            thread.join()
             
     def testSimpleLoadTestWithSubscription(self):
         def sendRequestExpect200():
