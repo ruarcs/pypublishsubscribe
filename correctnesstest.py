@@ -1,8 +1,5 @@
 import unittest
 import requests
-#from publishsubscribe import PublishSubscribeResource
-#from twisted.web import server
-#from twisted.internet import reactor
 from basepublishsubscribetest import BasePublishSubscribeTest
 
 class CorrectnessTest(BasePublishSubscribeTest):
