@@ -10,6 +10,7 @@ class LoadTest(BasePublishSubscribeTest):
         """
 
     def testSimpleLoadTestWithSubscription(self):
+        """Simulate a single user sending many requests."""
         def sendRequestExpect200():
             response = requests.get("http://localhost:%d/weather/alice" % self.port)
             self.assertEqual(response.status_code, 200)
@@ -21,7 +22,7 @@ class LoadTest(BasePublishSubscribeTest):
         # Check that server stays up after multiple requests.
         self.run_test(100, sendRequestExpect200)
 
-    def testLoadTestMultipleUsers(self):
+    def testLoadTestRequestsMultipleUsers(self):
         """Simulate multiple users making concurrent requests for messages."""
         user_list = ['alice', 'bob', 'charles']
         def sendRequestExpect200():
@@ -34,8 +35,26 @@ class LoadTest(BasePublishSubscribeTest):
         for user in user_list:
             response = requests.post("http://localhost:%d/weather/%s" % (self.port, user), data='')
             self.assertEqual(response.status_code, 200)
-        # Check that server stays up after multiple requests.
+        # Check that server stays up when subjected to requests from multiple users.
         self.run_test(50, sendRequestExpect200)
+
+    def testPostNewMessagesWithMultipleSubscribers(self):
+        """Simulate multiple users making concurrent requests for messages,
+            while new messages are being posted to this topic."""
+        user_list = ['alice', 'bob', 'charles']
+        def postMessageAndSendRequest():
+            for user in user_list:
+                response = requests.post("http://localhost:%d/weather" % self.port, data='sunny')
+                self.assertEqual(response.status_code, 200)
+                response = requests.get("http://localhost:%d/weather/%s" % (self.port, user))
+                self.assertEqual(response.status_code, 200)
+        # Subscribe all users to weather updates so that messages
+        # are persisted when posted.
+        for user in user_list:
+            response = requests.post("http://localhost:%d/weather/%s" % (self.port, user), data='')
+            self.assertEqual(response.status_code, 200)
+        # Check that server stays up after multiple requests.
+        self.run_test(50, postMessageAndSendRequest)
 
     ############################################################################
     # Helper functions
