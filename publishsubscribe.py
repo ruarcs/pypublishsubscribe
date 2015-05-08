@@ -3,7 +3,8 @@ from twisted.web import server, resource
 from twisted.internet import reactor
 
 class PublishSubscribeResource(resource.Resource):
-    # This structure consists of
+
+    # The backing data structure consists of
     # a dict of tuples. The key is the topic
     # name. The value is a tuple of a list
     # of strings (the current subscribers),
@@ -18,16 +19,24 @@ class PublishSubscribeResource(resource.Resource):
 
     def render_GET(self, request):
         if len(request.postpath) != 2:
+            # The only valid target for a GET
+            # is /<topic>/<username>
             raise ValueError( "Invalid resource!" )
         topic = request.postpath[0]
         username = request.postpath[1]
         if not topic in self.topics:
+            # If a valid subscription doesn't exist
+            # then return a 404
             request.setResponseCode(404)
             return ""
         messages = self.topics[topic][1]
+        # Check for any messages this user should be
+        # returned. Send the oldest message first.
         for index, message in enumerate(list(messages)):
             # Enumerate over *copy* to allow removal.
-            if username in message[1]:
+            subscriber_list = message[1]
+            if username in subscriber_list:
+                # Not the message content to return.
                 the_message = message[0]
                 # Remove from *original* using index.
                 messages[index][1].remove(username)
@@ -42,6 +51,7 @@ class PublishSubscribeResource(resource.Resource):
 
     def render_POST(self, request):
         def new_message(topic, message):
+            """Nested function to post a new message to a topic."""
             if topic in self.topics:
                 # If topic has been subscribed to then add a new entry,
                 # copying the list of current subscribers.
@@ -49,20 +59,28 @@ class PublishSubscribeResource(resource.Resource):
                 topic_entry[1].append((message, topic_entry[0][:]))
             return 200, "Message successfully posted."
         def new_subscription(topic, username):
+            """Nested function to subscribe a user to a topic."""
             if topic in self.topics:
+                # If the topic already exists then simply
+                # add the user to the list of subscribers.
                 self.topics[topic][0].append(username)
             else:
+                # If the topic doesn't exist then add it,
+                # and set the list of subscribers as the list
+                # containing just this user.
                 self.topics[topic] = ([username],[])
             return 200, "Subscription successful."
         postpath_length = len(request.postpath)
-        if postpath_length == 0 or postpath_length > 2:
-            raise ValueError( "Invalid resource!" )
+        if postpath_length == 1:
+            response_code, status_message \
+            = new_message(request.postpath[0], request.content.read())
         elif postpath_length == 2:
             response_code, status_message \
             = new_subscription(request.postpath[0], request.postpath[1])
         else:
-            response_code, status_message \
-            = new_message(request.postpath[0], request.content.read())
+            # The only valid targets are
+            # /<topic> and /<topic>/<username>
+            raise ValueError( "Invalid resource!" )
         request.setResponseCode(response_code)
         return status_message
 
@@ -75,6 +93,8 @@ class PublishSubscribeResource(resource.Resource):
             # If this isn't a valid topic, or if user is not subscribed.
             request.setResponseCode(404)
             return "Unsubscribe not successful."
+        # Remove the user fromt the list of subscribers
+        # to this topic.
         self.topics[topic][0].remove(username)
         if not self.topics[topic][0]:
             # If there are no more subscribers to this topic
@@ -114,7 +134,7 @@ def main():
     except:
         raise ValueError( "The port number must be a valid integer." )
     reactor.listenTCP(port, site)
-    print "Starting server. Listening on %d." % port
+    print "Starting server. Listening on %d...." % port
     reactor.run()
 
 if __name__ == '__main__':

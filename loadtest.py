@@ -23,24 +23,17 @@ class LoadTest(BasePublishSubscribeTest):
 
     def testLoadTestMultipleUsers(self):
         """Simulate multiple users making concurrent requests for messages."""
+        user_list = ['alice', 'bob', 'charles']
         def sendRequestExpect200():
-            response = requests.get("http://localhost:%d/weather/alice" % self.port)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'cloudy')
-            response = requests.get("http://localhost:%d/weather/bob" % self.port)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'cloudy')
-            response = requests.get("http://localhost:%d/weather/charles" % self.port)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'cloudy')
-        # Subscribe Alice to weather updates so that messages
+            for user in user_list:
+                response = requests.get("http://localhost:%d/weather/%s" % (self.port, user))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.text, 'cloudy')
+        # Subscribe all users to weather updates so that messages
         # are persisted when posted.
-        response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
-        self.assertEqual(response.status_code, 200)
-        response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
-        self.assertEqual(response.status_code, 200)
-        response = requests.post("http://localhost:%d/weather/charles" % self.port, data='')
-        self.assertEqual(response.status_code, 200)
+        for user in user_list:
+            response = requests.post("http://localhost:%d/weather/%s" % (self.port, user), data='')
+            self.assertEqual(response.status_code, 200)
         # Check that server stays up after multiple requests.
         self.run_test(50, sendRequestExpect200)
 
