@@ -29,19 +29,29 @@ class LoadTest(BasePublishSubscribeTest):
             self.assertEqual(response.status_code, 200)
             response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
             self.assertEqual(response.status_code, 200)
-            concurrent = 100
-            for i in range(concurrent):         
-                response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
-                self.assertEqual(response.status_code, 200)
-            q = Queue(concurrent * 2)
-            threads = []
-            for i in range(concurrent):
-                t = Thread(target=sendRequestExpect200)
-                t.daemon = True
-                t.start()
-                threads.append(t)
-            for thread in threads:
-                thread.join()
+        # Subscribe Alice to weather updates so that messages
+        # are persisted when posted.
+        response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        self.run_test(100, sendRequestExpect200)
+                
+    ############################################################################
+    # Helper functions
+    ############################################################################
+        
+    def run_test(self, concurrency_level, action):
+        for i in range(concurrency_level):         
+            response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
+            self.assertEqual(response.status_code, 200)
+        q = Queue(concurrency_level * 2)
+        threads = []
+        for i in range(concurrency_level):
+            t = Thread(target=action)
+            t.daemon = True
+            t.start()
+            threads.append(t)
+        for thread in threads:
+            thread.join()
             
 if __name__ == '__main__':
     unittest.main()
