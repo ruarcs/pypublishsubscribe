@@ -3,6 +3,9 @@ from twisted.web import server, resource
 from twisted.internet import reactor
 
 class PublishSubscribeResource(resource.Resource):
+    """A simple Publish-Subscribe server, allowing
+        users to subscribe to messages on specific
+        topics."""
 
     # The backing data structure consists of
     # a dict of tuples. The key is the topic
@@ -11,9 +14,8 @@ class PublishSubscribeResource(resource.Resource):
     # and list of tuples (the messages).
     # Each message tuple takes the form:
     # (message, [subscriber_name_1, subscriber_name_2, ...])
-    # When a new message is published we copy the *current* list
-    # of subscribers into a new tuple, so that we have an *independent*
-    # list of subscribers.
+    # When a new message is published we copy the current list
+    # of subscribers into a new tuple.
     topics = {}
     isLeaf = True
 
@@ -26,7 +28,7 @@ class PublishSubscribeResource(resource.Resource):
         username = request.postpath[1]
         if not topic in self.topics:
             # If a valid subscription doesn't exist
-            # then return a 404
+            # then return a 404.
             request.setResponseCode(404)
             return ""
         messages = self.topics[topic][1]
@@ -93,13 +95,13 @@ class PublishSubscribeResource(resource.Resource):
             # If this isn't a valid topic, or if user is not subscribed.
             request.setResponseCode(404)
             return "Unsubscribe not successful."
-        # Remove the user fromt the list of subscribers
+        # Remove the user from the list of subscribers
         # to this topic.
         self.topics[topic][0].remove(username)
         if not self.topics[topic][0]:
             # If there are no more subscribers to this topic
             # then remove it.
-            self.topics.remove(topic)
+            del self.topics[topic]
         else:
             # There are still subscribers. However we must
             # remove this user from any messages they are currently

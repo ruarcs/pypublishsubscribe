@@ -7,7 +7,7 @@ from basepublishsubscribetest import BasePublishSubscribeTest
 
 class CorrectnessTest(BasePublishSubscribeTest):
     """A set of tests to ensure that the Publish-Subscribe
-        server obeys the contract provided in the exercise
+        server obeys the contract provided in the exercise.
         """
     def testSubscribe(self):
         # Test a simple subscribe.
@@ -35,12 +35,14 @@ class CorrectnessTest(BasePublishSubscribeTest):
 
     def testGetMessageTwice(self):
         self.testSubscribeAndGetMessage()
-        # Attempting to get the message this time should return a 204.
+        # As only one message has been posted to this topic,
+        # attempting to get a message this time should return a 204.
         response = requests.get("http://localhost:%d/weather/bob" % self.port)
         self.assertEqual(response.status_code, 204)
 
     def testGetMessageNotSubscribed(self):
         self.testPostMessage()
+        # A message has been posted, but Bob has not subscribed.
         response = requests.get("http://localhost:%d/weather/bob" % self.port)
         self.assertEqual(response.status_code, 404)
 
@@ -64,12 +66,12 @@ class CorrectnessTest(BasePublishSubscribeTest):
         self.assertEqual(response.text, "cloudy")
         # Another attempt by Bob to get a weather update should be a 204,
         # (*you* have no more messages in this topic), not 404 (this topic
-        # does not exist)
+        # does not exist).
         response = requests.get("http://localhost:%d/weather/bob" % self.port)
         self.assertEqual(response.status_code, 204)
 
     def testUnsubscribedWhenMessagePosted(self):
-        # Bob subscribes to weather and a message is posted.
+        # Bob subscribes to weather, and a message is posted.
         self.testSubscribeAndPostMessage()
         # Alice now subscribes.
         response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
@@ -112,6 +114,32 @@ class CorrectnessTest(BasePublishSubscribeTest):
         response = requests.get("http://localhost:%d/weather/bob" % self.port)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.text, "cloudy")
+
+    def testUnsubscribeBeforeChecking(self):
+        # Bob subscribes to weather and a message is posted.
+        self.testSubscribeAndPostMessage()
+        # Bob now unsubscribes before requesting the message
+        response = requests.delete("http://localhost:%d/weather/bob" % self.port)
+        self.assertEquals(response.status_code, 200)
+        # If Bob now tries to retrieve the message he should get a 404.
+        response = requests.get("http://localhost:%d/weather/bob" % self.port)
+        self.assertEqual(response.status_code, 404)
+
+    def testResubscribe(self):
+        # Bob subscribes to weather and a message is posted.
+        self.testSubscribeAndPostMessage()
+        # Bob now unsubscribes before requesting the message
+        response = requests.delete("http://localhost:%d/weather/bob" % self.port)
+        self.assertEquals(response.status_code, 200)
+        # Bob now resubscribes.
+        response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        # If Bob now tries to retrieve the message he should get a 204,
+        # indicating that there are no messages for him on this topic.
+        # He should *not* get the message posted before he unsubscribed,
+        # and he also should *not* get a 404, as this is a valid subscription.
+        response = requests.get("http://localhost:%d/weather/bob" % self.port)
+        self.assertEqual(response.status_code, 204)
 
 
     ############################################################################
