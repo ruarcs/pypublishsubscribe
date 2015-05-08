@@ -7,26 +7,50 @@ from basepublishsubscribetest import BasePublishSubscribeTest
 class LoadTest(BasePublishSubscribeTest):
     """A set of tests to ensure that the Publish-Subscribe
         server copes under simulated load.
-        """  
-            
+        """
+
     def testSimpleLoadTestWithSubscription(self):
         def sendRequestExpect200():
             response = requests.get("http://localhost:%d/weather/alice" % self.port)
             self.assertEqual(response.status_code, 200)
-            response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.text, 'cloudy')
         # Subscribe Alice to weather updates so that messages
         # are persisted when posted.
         response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
         self.assertEqual(response.status_code, 200)
+        # Check that server stays up after multiple requests.
         self.run_test(100, sendRequestExpect200)
-                
+
+    def testLoadTestMultipleUsers(self):
+        """Simulate multiple users making concurrent requests for messages."""
+        def sendRequestExpect200():
+            response = requests.get("http://localhost:%d/weather/alice" % self.port)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.text, 'cloudy')
+            response = requests.get("http://localhost:%d/weather/bob" % self.port)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.text, 'cloudy')
+            response = requests.get("http://localhost:%d/weather/charles" % self.port)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.text, 'cloudy')
+        # Subscribe Alice to weather updates so that messages
+        # are persisted when posted.
+        response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        response = requests.post("http://localhost:%d/weather/charles" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        # Check that server stays up after multiple requests.
+        self.run_test(50, sendRequestExpect200)
+
     ############################################################################
     # Helper functions
     ############################################################################
-        
+
     def run_test(self, concurrency_level, action):
-        for i in range(concurrency_level):         
+        for i in range(concurrency_level):
+            # Post a series of weather updates for user to receive.
             response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
             self.assertEqual(response.status_code, 200)
         q = Queue(concurrency_level * 2)
@@ -38,6 +62,6 @@ class LoadTest(BasePublishSubscribeTest):
             threads.append(t)
         for thread in threads:
             thread.join()
-            
+
 if __name__ == '__main__':
     unittest.main()
