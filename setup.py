@@ -9,6 +9,7 @@ setup(name='pypublishsubscribe',
       packages=['pypublishsubscribe'],
       install_requires=[
           'twisted',
-          'requests'
+          'requests',
+          'nose'
       ],
       zip_safe=False)

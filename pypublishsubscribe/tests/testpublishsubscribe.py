@@ -179,7 +179,7 @@ class PublishSubscribeTest(unittest.TestCase):
         response = requests.post("http://localhost:%d/weather/alice" % self.port, data='')
         self.assertEqual(response.status_code, 200)
         # Check that server stays up after multiple requests.
-        self.run_test(100, sendRequestExpect200)
+        self.runMultipleRequests(100, sendRequestExpect200)
 
     def testLoadTestRequestsMultipleUsers(self):
         """Simulate multiple users making concurrent requests for messages."""
@@ -195,7 +195,7 @@ class PublishSubscribeTest(unittest.TestCase):
             response = requests.post("http://localhost:%d/weather/%s" % (self.port, user), data='')
             self.assertEqual(response.status_code, 200)
         # Check that server stays up when subjected to requests from multiple users.
-        self.run_test(50, sendRequestExpect200)
+        self.runMultipleRequests(50, sendRequestExpect200)
 
     def testPostNewMessagesWithMultipleSubscribers(self):
         """Simulate multiple users making concurrent requests for messages,
@@ -213,13 +213,13 @@ class PublishSubscribeTest(unittest.TestCase):
             response = requests.post("http://localhost:%d/weather/%s" % (self.port, user), data='')
             self.assertEqual(response.status_code, 200)
         # Check that server stays up after multiple requests.
-        self.run_test(50, postMessageAndSendRequest)
+        self.runMultipleRequests(50, postMessageAndSendRequest)
 
     ############################################################################
     # Helper functions
     ############################################################################
 
-    def run_test(self, concurrency_level, action):
+    def runMultipleRequests(self, concurrency_level, action):
         for i in range(concurrency_level):
             # Post a series of weather updates for user to receive.
             response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
