@@ -19,6 +19,7 @@ class PublishSubscribeServer(resource.Resource):
     topics = {}
     isLeaf = True
 
+
     def render_GET(self, request):
         """Handle a GET, which is a request by a user
             for any outstanding messages. A valid request
@@ -55,6 +56,7 @@ class PublishSubscribeServer(resource.Resource):
                 return the_message
         request.setResponseCode(204)
         return ""
+
 
     def render_POST(self, request):
         def new_message(topic, message):
@@ -93,6 +95,7 @@ class PublishSubscribeServer(resource.Resource):
         request.setResponseCode(response_code)
         return status_message
 
+
     def render_DELETE(self, request):
         if len(request.postpath) != 2:
             request.setResponseCode(404)
@@ -127,6 +130,7 @@ class PublishSubscribeServer(resource.Resource):
                         del messages[index]
         request.setResponseCode(200)
         return ""
+
 
     def _clear(self):
         # Allow to fully clear the data structure.
