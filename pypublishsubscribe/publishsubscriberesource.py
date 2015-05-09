@@ -125,21 +125,7 @@ class PublishSubscribeResource(resource.Resource):
         # For use in unit testing.
         self.topics.clear()
 
-def start(port):
-    # Start a server listening on a specified port.
-    try:
-        port = int(port)
-    except:
-        raise ValueError( "The port number must be a valid integer." )
-    site = server.Site(PublishSubscribeResource())
-    reactor.listenTCP(port, site)
-    print "Starting server. Listening on %d...." % port
-    reactor.run()
-
-    #####################################################################
-
 def main():
-    print "In main......"
     # Simple main method to allow the server to run, binding
     # to the specified port.
     if len(sys.argv) != 2:

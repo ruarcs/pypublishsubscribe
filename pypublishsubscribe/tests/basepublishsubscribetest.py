@@ -1,6 +1,6 @@
 import unittest
 import requests
-from publishsubscriberesource import PublishSubscribeResource
+from pypublishsubscribe.publishsubscriberesource import PublishSubscribeResource
 from twisted.web import server
 from twisted.internet import reactor
 from threading import Thread
