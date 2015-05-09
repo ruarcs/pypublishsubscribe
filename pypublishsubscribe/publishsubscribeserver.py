@@ -2,7 +2,7 @@ import sys
 from twisted.web import server, resource
 from twisted.internet import reactor
 
-class PublishSubscribeResource(resource.Resource):
+class PublishSubscribeServer(resource.Resource):
     """A simple Publish-Subscribe server, allowing
         users to subscribe to messages on specific
         topics."""
@@ -71,7 +71,7 @@ class PublishSubscribeResource(resource.Resource):
                 # and set the list of subscribers as the list
                 # containing just this user.
                 self.topics[topic] = ([username],[])
-            return 200, "Subscription successful."
+            return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
             response_code, status_message \
@@ -94,7 +94,7 @@ class PublishSubscribeResource(resource.Resource):
         if not topic in self.topics or not username in self.topics[topic][0]:
             # If this isn't a valid topic, or if user is not subscribed.
             request.setResponseCode(404)
-            return "Unsubscribe not successful."
+            return ""
         # Remove the user from the list of subscribers
         # to this topic.
         self.topics[topic][0].remove(username)
@@ -118,7 +118,7 @@ class PublishSubscribeResource(resource.Resource):
                         # delete the message, *from original list*.
                         del messages[index]
         request.setResponseCode(200)
-        return "Successfully unsubscribed."
+        return ""
 
     def _clear(self):
         # Allow to fully clear the data structure.
@@ -130,7 +130,7 @@ def main():
     # to the specified port.
     if len(sys.argv) != 2:
         raise ValueError("Please provide a port number to listen on.")
-    site = server.Site(PublishSubscribeResource())
+    site = server.Site(PublishSubscribeServer())
     try:
         port = int( sys.argv[1])
     except:

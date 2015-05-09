@@ -1,0 +1,24 @@
+This project consists of a simple Publish-Subscribe server
+written in Python, along with accompanying tests.
+
+The simplest way to run the server is to first install
+using setuptools:
+
+    cd pypublishsubscribe
+    python setup.py install
+
+You can then run the server by cd'ing again into the nested
+"pypublishsubscribe" directory and calling:
+
+    python -m pypublishsubscribeserver <port_number>
+
+specifying the port number you wish the server to listen on.
+When the server launches successfully you will be shown the
+message:
+
+    Starting server. Listening on <port_number>....
+
+Associated tests can be run using "nose", by calling anywhere
+in the project directory:
+
+    nosetests

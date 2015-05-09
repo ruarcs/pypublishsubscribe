@@ -1,6 +1,6 @@
 import unittest
 import requests
-from pypublishsubscribe.publishsubscriberesource import PublishSubscribeResource
+from pypublishsubscribe.publishsubscriberesource import PublishSubscribeServer
 from twisted.web import server
 from twisted.internet import reactor
 from threading import Thread
@@ -12,7 +12,7 @@ class PublishSubscribeTest(unittest.TestCase):
         after each test, to allow test independence.
         """
     port = 8081
-    publisher = PublishSubscribeResource()
+    publisher = PublishSubscribeServer()
 
     @classmethod
     def setUpClass(cls):
