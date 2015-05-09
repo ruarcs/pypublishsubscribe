@@ -7,7 +7,7 @@ class PublishSubscribeServer(resource.Resource):
         users to subscribe to messages on specific
         topics."""
 
-    # The backing data structure consists of
+    # The backing data structure here consists of
     # a dict of tuples. The key is the topic
     # name. The value is a tuple of a list
     # of strings (the current subscribers),
@@ -20,6 +20,10 @@ class PublishSubscribeServer(resource.Resource):
     isLeaf = True
 
     def render_GET(self, request):
+        """Handle a GET, which is a request by a user
+            for any outstanding messages. A valid request
+            will return a 200, and an invalid request will
+            return a 404."""
         if len(request.postpath) != 2:
             # The only valid target for a GET
             # is /<topic>/<username>
@@ -60,7 +64,7 @@ class PublishSubscribeServer(resource.Resource):
                 # copying the list of current subscribers.
                 topic_entry = self.topics[topic]
                 topic_entry[1].append((message, topic_entry[0][:]))
-            return 200, "Message successfully posted."
+            return 200, ""
         def new_subscription(topic, username):
             """Subscribe a user to a topic."""
             if topic in self.topics:
@@ -70,7 +74,8 @@ class PublishSubscribeServer(resource.Resource):
             else:
                 # If the topic doesn't exist then add it,
                 # and set the list of subscribers as the list
-                # containing just this user.
+                # containing just this user, with messages
+                # as an empty list.
                 self.topics[topic] = ([username],[])
             return 200, ""
         postpath_length = len(request.postpath)
@@ -130,7 +135,7 @@ class PublishSubscribeServer(resource.Resource):
 
 def main():
     # Simple main method to allow the server to run, binding
-    # to the specified port.
+    # to the specified port. Takes one arg, which is the port number.
     if len(sys.argv) != 2:
         raise ValueError("Please provide a port number to listen on.")
     site = server.Site(PublishSubscribeServer())
