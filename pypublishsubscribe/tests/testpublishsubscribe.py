@@ -1,6 +1,6 @@
 import unittest
 import requests
-from pypublishsubscribe.publishsubscriberesource import PublishSubscribeServer
+from pypublishsubscribe.publishsubscribeserver import PublishSubscribeServer
 from twisted.web import server
 from twisted.internet import reactor
 from threading import Thread
@@ -162,6 +162,28 @@ class PublishSubscribeTest(unittest.TestCase):
         # and he also should *not* get a 404, as this is a valid subscription.
         response = requests.get("http://localhost:%d/weather/bob" % self.port)
         self.assertEqual(response.status_code, 204)
+
+    def testGetInvalidResourceGives404AndServerStaysUp(self):
+        # Bob subscribes to weather and a message is posted.
+        self.testSubscribeAndPostMessage()
+        # An invalid resource should give a 404.
+        response = requests.get("http://localhost:%d/weather/bob/foo" % self.port)
+        self.assertEqual(response.status_code, 404)
+        # But the server should have handled this gracefully, and should
+        # return correctly if Bob requests a message.
+        response = requests.get("http://localhost:%d/weather/bob" % self.port)
+        self.assertEqual(response.status_code, 200)
+
+    def testDeleteInvalidResourceGives404AndServerStaysUp(self):
+        response = requests.post("http://localhost:%d/weather/bob" % self.port, data='')
+        self.assertEqual(response.status_code, 200)
+        # An invalid resource should give a 404.
+        response = requests.delete("http://localhost:%d/weather" % self.port)
+        self.assertEqual(response.status_code, 404)
+        # But the server should have handled this gracefully, and should
+        # allow a new message to be posted to this topic.
+        response = requests.post("http://localhost:%d/weather" % self.port, data='cloudy')
+        self.assertEqual(response.status_code, 200)
 
     ###########################################################
     # A set of simple load tests to validate that the server

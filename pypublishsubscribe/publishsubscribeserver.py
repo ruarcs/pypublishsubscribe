@@ -23,7 +23,8 @@ class PublishSubscribeServer(resource.Resource):
         if len(request.postpath) != 2:
             # The only valid target for a GET
             # is /<topic>/<username>
-            raise ValueError( "Invalid resource!" )
+            request.setResponseCode(404)
+            return ""
         topic = request.postpath[0]
         username = request.postpath[1]
         if not topic in self.topics:
@@ -53,7 +54,7 @@ class PublishSubscribeServer(resource.Resource):
 
     def render_POST(self, request):
         def new_message(topic, message):
-            """Nested function to post a new message to a topic."""
+            """Post a new message to a topic."""
             if topic in self.topics:
                 # If topic has been subscribed to then add a new entry,
                 # copying the list of current subscribers.
@@ -61,7 +62,7 @@ class PublishSubscribeServer(resource.Resource):
                 topic_entry[1].append((message, topic_entry[0][:]))
             return 200, "Message successfully posted."
         def new_subscription(topic, username):
-            """Nested function to subscribe a user to a topic."""
+            """Subscribe a user to a topic."""
             if topic in self.topics:
                 # If the topic already exists then simply
                 # add the user to the list of subscribers.
@@ -82,13 +83,15 @@ class PublishSubscribeServer(resource.Resource):
         else:
             # The only valid targets are
             # /<topic> and /<topic>/<username>
-            raise ValueError( "Invalid resource!" )
+            request.setResponseCode(404)
+            return ""
         request.setResponseCode(response_code)
         return status_message
 
     def render_DELETE(self, request):
         if len(request.postpath) != 2:
-            raise ValueError( "Invalid resource!" )
+            request.setResponseCode(404)
+            return ""
         topic = request.postpath[0]
         username = request.postpath[1]
         if not topic in self.topics or not username in self.topics[topic][0]:
