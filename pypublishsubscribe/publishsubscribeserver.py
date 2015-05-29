@@ -37,7 +37,8 @@ class PublishSubscribeServer(resource.Resource):
             # then return a 404.
             request.setResponseCode(404)
             return ""
-        the_message = self.find_message_and_update_list(topic, username, clear_all_subscriber_messages_for_topic=False)
+        generator = self.get_and_remove_next_message(topic, username)
+	the_message = generator.next()
 	if the_message:
 	    request.setResponseCode(200)
             return the_message
@@ -113,14 +114,15 @@ class PublishSubscribeServer(resource.Resource):
             # remove this user from any messages they are currently
             # subscribed to on this topic, otherwise this message will never
             # be deleted, and effectively leaks memory.
-            self.find_message_and_update_list(topic, username, clear_all_subscriber_messages_for_topic=True)
+            generator = self.get_and_remove_next_message(topic, username)
+	    while generator.next(): pass
         request.setResponseCode(200)
         return ""
         
     def is_valid_username_and_topic(self, topic, username):
         return topic in self.topics and username in self.topics[topic][0]
         
-    def find_message_and_update_list(self, topic, username, clear_all_subscriber_messages_for_topic=False):
+    def get_and_remove_next_message(self, topic, username):
 	topic_entry = self.topics[topic]
 	messages = topic_entry[1]
         for index, message in enumerate(list(messages)):
@@ -136,9 +138,8 @@ class PublishSubscribeServer(resource.Resource):
                     # If all users have received then
                     # delete the message, *from original list*.
                     del messages[index]
-                if not clear_all_subscriber_messages_for_topic:
-                    return the_message
-        return None
+                yield the_message
+        yield None
                 
     def _clear(self):
         # Allow to fully clear the data structure.
