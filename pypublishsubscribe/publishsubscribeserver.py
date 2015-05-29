@@ -44,11 +44,12 @@ class PublishSubscribeServer(resource.Resource):
             # Enumerate over *copy* to allow removal.
             subscriber_set = message[1]
             if username in subscriber_set:
-                # Not the message content to return.
+                # Note the message content to return.
                 the_message = message[0]
                 # Remove from *original* using index.
-                messages[index][1].remove(username)
-                if not messages[index][1]:
+                original_subscriber_set = messages[index][1]
+		original_subscriber_set.remove(username)
+                if not original_subscriber_set:
                     # If all users have received then
                     # delete the message, *from original list*.
                     del messages[index]
@@ -65,14 +66,17 @@ class PublishSubscribeServer(resource.Resource):
                 # If topic has been subscribed to then add a new entry,
                 # copying the list of current subscribers.
                 topic_entry = self.topics[topic]
-                topic_entry[1].append((message, set(topic_entry[0])))
+		subscriber_set = set(topic_entry[0])
+		message_list = topic_entry[1]
+                message_list.append((message, subscriber_set))
             return 200, ""
         def new_subscription(topic, username):
             """Subscribe a user to a topic."""
             if topic in self.topics:
                 # If the topic already exists then simply
                 # add the user to the list of subscribers.
-                self.topics[topic][0].add(username)
+		subscriber_list = self.topics[topic][0] 
+                subscriber_list.add(username)
             else:
                 # If the topic doesn't exist then add it,
                 # and set the list of subscribers as the list
