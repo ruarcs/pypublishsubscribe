@@ -70,6 +70,12 @@ class PublishSubscribeTest(unittest.TestCase):
         self.assertEqual(response.status_code, 204)
 
     def testGetMessageNotSubscribed(self):
+        self.subscribeAliceAndBobAndPost()
+        # A message has been posted, but Bob has not subscribed.
+        response = requests.get("http://localhost:%d/weather/charles" % self.port_number)
+        self.assertEqual(response.status_code, 404)
+
+    def testGetMessageNotSubscribedButTopicExists(self):
         self.testPostMessage()
         # A message has been posted, but Bob has not subscribed.
         response = requests.get("http://localhost:%d/weather/bob" % self.port_number)

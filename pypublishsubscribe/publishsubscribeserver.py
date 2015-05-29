@@ -32,7 +32,7 @@ class PublishSubscribeServer(resource.Resource):
             return ""
         topic = request.postpath[0]
         username = request.postpath[1]
-        if not topic in self.topics:
+        if not topic in self.topics or not username in self.topics[topic][0]:
             # If a valid subscription doesn't exist
             # then return a 404.
             request.setResponseCode(404)
