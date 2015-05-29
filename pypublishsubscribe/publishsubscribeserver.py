@@ -107,7 +107,6 @@ class PublishSubscribeServer(resource.Resource):
         if not subscribers:
             # If there are no more subscribers to this topic
             # then remove it.
-            #del topic_entry
 	    del self.topics[topic]
         else:
             # There are still subscribers. However we must
