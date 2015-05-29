@@ -32,7 +32,7 @@ class PublishSubscribeServer(resource.Resource):
             return ""
         topic = request.postpath[0]
         username = request.postpath[1]
-        if not topic in self.topics or not username in self.topics[topic][0]:
+        if not self.is_valid_username_and_topic(topic, username):
             # If a valid subscription doesn't exist
             # then return a 404.
             request.setResponseCode(404)
@@ -107,7 +107,7 @@ class PublishSubscribeServer(resource.Resource):
             return ""
         topic = request.postpath[0]
         username = request.postpath[1]
-        if not topic in self.topics or not username in self.topics[topic][0]:
+        if not self.is_valid_username_and_topic(topic, username):
             # If this isn't a valid topic, or if user is not subscribed.
             request.setResponseCode(404)
             return ""
@@ -140,8 +140,10 @@ class PublishSubscribeServer(resource.Resource):
                         del messages[index]
         request.setResponseCode(200)
         return ""
-
-
+        
+    def is_valid_username_and_topic(self, topic, username):
+        return topic in self.topics and username in self.topics[topic][0]
+    
     def _clear(self):
         # Allow to fully clear the data structure.
         # For use in unit testing.
