@@ -9,12 +9,12 @@ class PublishSubscribeServer(resource.Resource):
 
     # The backing data structure here consists of
     # a dict of tuples. The key is the topic
-    # name. The value is a tuple of a list
+    # name. The value is a tuple of a set
     # of strings (the current subscribers),
     # and list of tuples (the messages).
     # Each message tuple takes the form:
-    # (message, [subscriber_name_1, subscriber_name_2, ...])
-    # When a new message is published we copy the current list
+    # (message, {subscriber_name_1, subscriber_name_2, ...})
+    # When a new message is published we copy the current set
     # of subscribers into a new tuple.
     topics = {}
     isLeaf = True
@@ -42,14 +42,14 @@ class PublishSubscribeServer(resource.Resource):
         # returned. Send the oldest message first.
         for index, message in enumerate(list(messages)):
             # Enumerate over *copy* to allow removal.
-            subscriber_set = message[1]
-            if username in subscriber_set:
+            subscribers = message[1]
+            if username in subscribers:
                 # Note the message content to return.
                 the_message = message[0]
                 # Remove from *original* using index.
-                original_subscriber_set = messages[index][1]
-		original_subscriber_set.remove(username)
-                if not original_subscriber_set:
+                subscribers = messages[index][1]
+		subscribers.remove(username)
+                if not subscribers:
                     # If all users have received then
                     # delete the message, *from original list*.
                     del messages[index]
@@ -58,33 +58,32 @@ class PublishSubscribeServer(resource.Resource):
         request.setResponseCode(204)
         return ""
 
-
     def render_POST(self, request):
         def new_message(topic, message):
             """Post a new message to a topic."""
             if topic in self.topics:
                 # If topic has been subscribed to then add a new entry,
-                # copying the list of current subscribers.
+                # copying the set of current subscribers.
                 topic_entry = self.topics[topic]
-		subscriber_set = set(topic_entry[0])
-		message_list = topic_entry[1]
-                message_list.append((message, subscriber_set))
+		subscribers = set(topic_entry[0])
+		messages = topic_entry[1]
+                messages.append((message, subscribers))
             return 200, ""
         def new_subscription(topic, username):
             """Subscribe a user to a topic."""
             if topic in self.topics:
                 # If the topic already exists then simply
-                # add the user to the list of subscribers.
-		subscriber_set = self.topics[topic][0] 
-                subscriber_set.add(username)
+                # add the user to the set of subscribers.
+		subscribers = self.topics[topic][0] 
+                subscribers.add(username)
             else:
                 # If the topic doesn't exist then add it,
-                # and set the list of subscribers as the list
+                # and initialize the set of subscribers as the set
                 # containing just this user, with messages
                 # as an empty list.
-		subscriber_set = set()
-		subscriber_set.add(username)
-                self.topics[topic] = (subscriber_set,[])
+		subscribers = set()
+		subscribers.add(username)
+                self.topics[topic] = (subscribers,[])
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
@@ -112,28 +111,30 @@ class PublishSubscribeServer(resource.Resource):
             # If this isn't a valid topic, or if user is not subscribed.
             request.setResponseCode(404)
             return ""
-        # Remove the user from the list of subscribers
+        # Remove the user from the set of subscribers
         # to this topic.
-	subscriber_set = self.topics[topic][0] 
-        subscriber_set.remove(username)
-        if not subscriber_set:
+	topic_entry = self.topics[topic]
+	subscribers = topic_entry[0] 
+        subscribers.remove(username)
+        if not subscribers:
             # If there are no more subscribers to this topic
             # then remove it.
-            del self.topics[topic]
+            #del topic_entry
+	    del self.topics[topic]
         else:
             # There are still subscribers. However we must
             # remove this user from any messages they are currently
             # subscribed to on this topic, otherwise this message will never
             # be deleted, and effectively leaks memory.
-            messages = self.topics[topic][1]
+            messages = topic_entry[1]
             for index, message in enumerate(list(messages)):
             # Enumerate over *copy* to allow removal.
-	    	subscriber_set = message[1]
-                if username in subscriber_set:
+	    	subscribers = message[1]
+                if username in subscribers:
                     # Remove from *original* using index.
-		    original_subscriber_set = messages[index][1] 
-                    orignal_subscriber_set.remove(username)
-                    if not original_subscriber_set:
+		    subscribers = messages[index][1] 
+                    subscribers.remove(username)
+                    if not subscribers:
                         # If all users have received then
                         # delete the message, *from original list*.
                         del messages[index]
