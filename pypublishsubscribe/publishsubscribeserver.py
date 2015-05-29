@@ -42,8 +42,8 @@ class PublishSubscribeServer(resource.Resource):
         # returned. Send the oldest message first.
         for index, message in enumerate(list(messages)):
             # Enumerate over *copy* to allow removal.
-            subscriber_list = message[1]
-            if username in subscriber_list:
+            subscriber_set = message[1]
+            if username in subscriber_set:
                 # Not the message content to return.
                 the_message = message[0]
                 # Remove from *original* using index.
@@ -65,20 +65,22 @@ class PublishSubscribeServer(resource.Resource):
                 # If topic has been subscribed to then add a new entry,
                 # copying the list of current subscribers.
                 topic_entry = self.topics[topic]
-                topic_entry[1].append((message, topic_entry[0][:]))
+                topic_entry[1].append((message, set(topic_entry[0])))
             return 200, ""
         def new_subscription(topic, username):
             """Subscribe a user to a topic."""
             if topic in self.topics:
                 # If the topic already exists then simply
                 # add the user to the list of subscribers.
-                self.topics[topic][0].append(username)
+                self.topics[topic][0].add(username)
             else:
                 # If the topic doesn't exist then add it,
                 # and set the list of subscribers as the list
                 # containing just this user, with messages
                 # as an empty list.
-                self.topics[topic] = ([username],[])
+		user_set = set()
+		user_set.add(username)
+                self.topics[topic] = (user_set,[])
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
