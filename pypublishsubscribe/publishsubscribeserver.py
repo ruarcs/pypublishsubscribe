@@ -75,16 +75,16 @@ class PublishSubscribeServer(resource.Resource):
             if topic in self.topics:
                 # If the topic already exists then simply
                 # add the user to the list of subscribers.
-		subscriber_list = self.topics[topic][0] 
-                subscriber_list.add(username)
+		subscriber_set = self.topics[topic][0] 
+                subscriber_set.add(username)
             else:
                 # If the topic doesn't exist then add it,
                 # and set the list of subscribers as the list
                 # containing just this user, with messages
                 # as an empty list.
-		user_set = set()
-		user_set.add(username)
-                self.topics[topic] = (user_set,[])
+		subscriber_set = set()
+		subscriber_set.add(username)
+                self.topics[topic] = (subscriber_set,[])
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
@@ -114,8 +114,9 @@ class PublishSubscribeServer(resource.Resource):
             return ""
         # Remove the user from the list of subscribers
         # to this topic.
-        self.topics[topic][0].remove(username)
-        if not self.topics[topic][0]:
+	subscriber_set = self.topics[topic][0] 
+        subscriber_set.remove(username)
+        if not subscriber_set:
             # If there are no more subscribers to this topic
             # then remove it.
             del self.topics[topic]
@@ -127,10 +128,12 @@ class PublishSubscribeServer(resource.Resource):
             messages = self.topics[topic][1]
             for index, message in enumerate(list(messages)):
             # Enumerate over *copy* to allow removal.
-                if username in message[1]:
+	    	subscriber_set = message[1]
+                if username in subscriber_set:
                     # Remove from *original* using index.
-                    messages[index][1].remove(username)
-                    if not messages[index][1]:
+		    original_subscriber_set = messages[index][1] 
+                    orignal_subscriber_set.remove(username)
+                    if not original_subscriber_set:
                         # If all users have received then
                         # delete the message, *from original list*.
                         del messages[index]
