@@ -37,26 +37,13 @@ class PublishSubscribeServer(resource.Resource):
             # then return a 404.
             request.setResponseCode(404)
             return ""
-        messages = self.topics[topic][1]
-        # Check for any messages this user should be
-        # returned. Send the oldest message first.
-        for index, message in enumerate(list(messages)):
-            # Enumerate over *copy* to allow removal.
-            subscribers = message[1]
-            if username in subscribers:
-                # Note the message content to return.
-                the_message = message[0]
-                # Remove from *original* using index.
-                subscribers = messages[index][1]
-		subscribers.remove(username)
-                if not subscribers:
-                    # If all users have received then
-                    # delete the message, *from original list*.
-                    del messages[index]
-                request.setResponseCode(200)
-                return the_message
-        request.setResponseCode(204)
-        return ""
+        the_message = self.find_message_and_update_list(topic, username, clear_all_subscriber_messages_for_topic=False)
+	if the_message:
+	    request.setResponseCode(200)
+            return the_message
+	else:
+	    request.setResponseCode(204)
+	    return ""
 
     def render_POST(self, request):
         def new_message(topic, message):
@@ -126,24 +113,33 @@ class PublishSubscribeServer(resource.Resource):
             # remove this user from any messages they are currently
             # subscribed to on this topic, otherwise this message will never
             # be deleted, and effectively leaks memory.
-            messages = topic_entry[1]
-            for index, message in enumerate(list(messages)):
-            # Enumerate over *copy* to allow removal.
-	    	subscribers = message[1]
-                if username in subscribers:
-                    # Remove from *original* using index.
-		    subscribers = messages[index][1] 
-                    subscribers.remove(username)
-                    if not subscribers:
-                        # If all users have received then
-                        # delete the message, *from original list*.
-                        del messages[index]
+            self.find_message_and_update_list(topic, username, clear_all_subscriber_messages_for_topic=True)
         request.setResponseCode(200)
         return ""
         
     def is_valid_username_and_topic(self, topic, username):
         return topic in self.topics and username in self.topics[topic][0]
-    
+        
+    def find_message_and_update_list(self, topic, username, clear_all_subscriber_messages_for_topic=False):
+	topic_entry = self.topics[topic]
+	messages = topic_entry[1]
+        for index, message in enumerate(list(messages)):
+        # Enumerate over *copy* to allow removal.
+            subscribers = message[1]
+            if username in subscribers:
+            # Note the message content to return.
+                the_message = message[0]
+                # Remove from *original* using index.
+                subscribers = messages[index][1] 
+                subscribers.remove(username)
+                if not subscribers:
+                    # If all users have received then
+                    # delete the message, *from original list*.
+                    del messages[index]
+                if not clear_all_subscriber_messages_for_topic:
+                    return the_message
+        return None
+                
     def _clear(self):
         # Allow to fully clear the data structure.
         # For use in unit testing.
