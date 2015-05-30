@@ -1,11 +1,17 @@
 import sys
 from twisted.web import server, resource
 from twisted.internet import reactor
+from collections import deque
 
 class PublishSubscribeServer(resource.Resource):
     """A simple Publish-Subscribe server, allowing
         users to subscribe to messages on specific
         topics."""
+    
+    # The maximum number of messages that can be posted
+    # for one topic. Once this limit is reached we delete
+    # the oldest message when adding the new one.
+    MAX_MESSAGES = 500
 
     # The backing data structure here consists of
     # a dict of tuples. The key is the topic
@@ -17,8 +23,8 @@ class PublishSubscribeServer(resource.Resource):
     # When a new message is published we copy the current set
     # of subscribers into a new tuple.
     topics = {}
-    isLeaf = True
 
+    isLeaf = True
 
     def render_GET(self, request):
         """Handle a GET, which is a request by a user
@@ -37,8 +43,8 @@ class PublishSubscribeServer(resource.Resource):
             # then return a 404.
             request.setResponseCode(404)
             return ""
-        generator = self.get_and_remove_next_message(topic, username)
-	the_message = generator.next()
+        message_generator = self.get_and_remove_next_message(topic, username)
+	the_message = message_generator.next()
 	if the_message:
 	    request.setResponseCode(200)
             return the_message
@@ -71,7 +77,7 @@ class PublishSubscribeServer(resource.Resource):
                 # as an empty list.
 		subscribers = set()
 		subscribers.add(username)
-                self.topics[topic] = (subscribers,[])
+                self.topics[topic] = (subscribers, deque(maxlen=self.MAX_MESSAGES))
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
@@ -113,8 +119,10 @@ class PublishSubscribeServer(resource.Resource):
             # remove this user from any messages they are currently
             # subscribed to on this topic, otherwise this message will never
             # be deleted, and effectively leaks memory.
-            generator = self.get_and_remove_next_message(topic, username)
-	    while generator.next(): pass
+            message_generator = self.get_and_remove_next_message(topic, username)
+	    # Remove any messages for this user by iterating over the
+	    # generator until we get None.
+	    while message_generator.next(): pass
         request.setResponseCode(200)
         return ""
         
