@@ -2,6 +2,7 @@ import sys
 from twisted.web import server, resource
 from twisted.internet import reactor
 from collections import deque
+from copy import copy
 
 class PublishSubscribeServer(resource.Resource):
     """A simple Publish-Subscribe server, allowing
@@ -132,7 +133,7 @@ class PublishSubscribeServer(resource.Resource):
     def get_and_remove_next_message(self, topic, username):
 	topic_entry = self.topics[topic]
 	messages = topic_entry[1]
-        for index, message in enumerate(list(messages)):
+        for index, message in enumerate(copy(messages)):
         # Enumerate over *copy* to allow removal.
             subscribers = message[1]
             if username in subscribers:
