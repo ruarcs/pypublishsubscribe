@@ -17,7 +17,7 @@ class PublishSubscribeServer(resource.Resource):
     # a dict of tuples. The key is the topic
     # name. The value is a tuple of a set
     # of strings (the current subscribers),
-    # and list of tuples (the messages).
+    # and deque of tuples (the messages).
     # Each message tuple takes the form:
     # (message, {subscriber_name_1, subscriber_name_2, ...})
     # When a new message is published we copy the current set
@@ -74,7 +74,7 @@ class PublishSubscribeServer(resource.Resource):
                 # If the topic doesn't exist then add it,
                 # and initialize the set of subscribers as the set
                 # containing just this user, with messages
-                # as an empty list.
+                # as an empty deque.
 		subscribers = set()
 		subscribers.add(username)
                 self.topics[topic] = (subscribers, deque(maxlen=self.MAX_MESSAGES))
