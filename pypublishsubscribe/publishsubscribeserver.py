@@ -3,20 +3,22 @@ from twisted.web import server, resource
 from twisted.internet import reactor
 from collections import deque
 from copy import copy
+import argparse
 
 class PublishSubscribeServer(resource.Resource):
     """A simple Publish-Subscribe server, allowing
         users to subscribe to messages on specific
         topics."""
     
-    # The maximum number of messages that can be posted
+    # "max_messages" is the max number that can be posted
     # for one topic. Once this limit is reached we delete
     # the oldest message when adding the new one. Failure
     # to do this would leave open a possible attack vector
     # where an unlimited number of messages could be posted
     # to a topic without messages ever being pulled off the
     # queue by subscribers.
-    MAX_MESSAGES = 500
+    def __init__(self, max_messages=500):
+	self.max_messages = max_messages
 
     # The backing data structure here consists of
     # a dict of tuples. The key is the topic
@@ -82,7 +84,7 @@ class PublishSubscribeServer(resource.Resource):
                 # as an empty deque.
 		subscribers = set()
 		subscribers.add(username)
-                self.topics[topic] = (subscribers, deque(maxlen=self.MAX_MESSAGES))
+                self.topics[topic] = (subscribers, deque(maxlen=self.max_messages))
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
@@ -158,15 +160,15 @@ class PublishSubscribeServer(resource.Resource):
 def main():
     # Simple main method to allow the server to run, binding
     # to the specified port. Takes one arg, which is the port number.
-    if len(sys.argv) != 2:
-        raise ValueError("Please provide a port number to listen on.")
-    site = server.Site(PublishSubscribeServer())
-    try:
-        port = int( sys.argv[1])
-    except:
-        raise ValueError( "The port number must be a valid integer." )
-    reactor.listenTCP(port, site)
-    print "Starting server. Listening on %d...." % port
+    parser = argparse.ArgumentParser(description="Start a simple publish-subscribe server.")
+    parser.add_argument("port_number", metavar="PORT_NUMBER",type=int, choices=xrange(1,65535))
+    parser.add_argument("--max_messages", metavar="MAX_MESSAGES",type=int,default=500,
+	    help="Maximum number of messages allowed to build up in a topic before we "
+	         "begin to clear out oldest messages.")
+    args = parser.parse_args()
+    site = server.Site(PublishSubscribeServer(args.max_messages))
+    reactor.listenTCP(args.port_number, site)
+    print "Starting server. Listening on %d...." % args.port_number
     reactor.run()
 
 if __name__ == "__main__":
