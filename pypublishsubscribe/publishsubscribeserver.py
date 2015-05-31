@@ -11,7 +11,11 @@ class PublishSubscribeServer(resource.Resource):
     
     # The maximum number of messages that can be posted
     # for one topic. Once this limit is reached we delete
-    # the oldest message when adding the new one.
+    # the oldest message when adding the new one. Failure
+    # to do this would leave open a possible attack vector
+    # where an unlimited number of messages could be posted
+    # to a topic without messages ever being pulled off the
+    # queue by subscribers.
     MAX_MESSAGES = 500
 
     # The backing data structure here consists of
@@ -82,11 +86,9 @@ class PublishSubscribeServer(resource.Resource):
             return 200, ""
         postpath_length = len(request.postpath)
         if postpath_length == 1:
-            response_code, status_message \
-            = new_message(request.postpath[0], request.content.read())
+            response_code, status_message = new_message(request.postpath[0], request.content.read())
         elif postpath_length == 2:
-            response_code, status_message \
-            = new_subscription(request.postpath[0], request.postpath[1])
+            response_code, status_message = new_subscription(request.postpath[0], request.postpath[1])
         else:
             # The only valid targets are
             # /<topic> and /<topic>/<username>
@@ -108,8 +110,7 @@ class PublishSubscribeServer(resource.Resource):
             return ""
         # Remove the user from the set of subscribers
         # to this topic.
-	topic_entry = self.topics[topic]
-	subscribers = topic_entry[0] 
+	subscribers = self.topics[topic][0] 
         subscribers.remove(username)
         if not subscribers:
             # If there are no more subscribers to this topic
